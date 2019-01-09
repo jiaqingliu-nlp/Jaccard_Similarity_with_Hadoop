@@ -24,15 +24,7 @@ public class JacSimCalc {
 	private static String prefix = "";
 	private static String suffix = "";
 
-	/**
-	 * 如果已经存在factory，则加一个装饰器，将原来的factory和用来读取hdfs的factory都封装进去，按需使用
-	 *
-	 * @param fsUrlStreamHandlerFactory
-	 * @throws Exception
-	 */
 	private static void registerFactory(final FsUrlStreamHandlerFactory fsUrlStreamHandlerFactory) throws Exception {
-		// log.info("registerFactory : " +
-		// fsUrlStreamHandlerFactory.getClass().getName());
 		final Field factoryField = URL.class.getDeclaredField("factory");
 		factoryField.setAccessible(true);
 		final Field lockField = URL.class.getDeclaredField("streamHandlerLock");
@@ -136,8 +128,8 @@ public class JacSimCalc {
 			try {
 				brReader = new BufferedReader(new InputStreamReader(in));
 				while ((strLineRead = brReader.readLine()) != null) {
-					String trim = SPACE_REG.matcher(strLineRead).replaceAll("");
-					File2Map.add(trim.toLowerCase());
+//					String trim = SPACE_REG.matcher(strLineRead).replaceAll("");
+					File2Map.add(strLineRead);
 				}
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
@@ -151,11 +143,12 @@ public class JacSimCalc {
 		}
 
 		public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
-			word = SPACE_REG.matcher(value.toString()).replaceAll("").toLowerCase();
+			word = SPACE_REG.matcher(value.toString()).replaceAll("");
 			for (String s : File2Map) {
-				Double v = calculateJaccardSimilarityAlt(prefix + word + suffix, prefix + s + suffix);
+				String trimS = SPACE_REG.matcher(s.toString()).replaceAll("");
+				Double v = calculateJaccardSimilarityAlt(prefix + word.toLowerCase() + suffix, prefix + trimS.toLowerCase() + suffix);
 				if (v >= threshold && v <= 1) {
-					context.write(new Text("<" + word + "," + s + ">"), new DoubleWritable(v));
+					context.write(new Text("<" + word + "," + trimS + ">"), new DoubleWritable(v));
 				}
 			}
 		}
